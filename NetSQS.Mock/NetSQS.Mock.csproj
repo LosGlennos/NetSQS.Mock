@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Martin Fylke</Authors>
+    <Company />
+    <PackageProjectUrl>https://github.com/LosGlennos/NetSQS</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LosGlennos/NetSQS</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>0.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetSQS" Version="0.0.8" />
+  </ItemGroup>
+
+</Project>
