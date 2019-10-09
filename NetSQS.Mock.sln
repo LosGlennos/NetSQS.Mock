@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29318.209
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetSQS.Mock", "NetSQS.Mock.csproj", "{9B789F79-4E44-4577-883E-04DE6BC8B437}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetSQS.Mock", "NetSQS.Mock\NetSQS.Mock.csproj", "{9B789F79-4E44-4577-883E-04DE6BC8B437}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetSQS.Mock.Tests", "..\NetSQS.Mock.Tests\NetSQS.Mock.Tests.csproj", "{3DC294BC-C46B-40AD-AD96-DD903AEFEF34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetSQS.Mock.Tests", "NetSQS.Mock.Tests\NetSQS.Mock.Tests.csproj", "{3DC294BC-C46B-40AD-AD96-DD903AEFEF34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
