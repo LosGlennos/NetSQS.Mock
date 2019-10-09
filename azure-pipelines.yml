@@ -32,6 +32,11 @@ steps:
     projects: '$(solution)'
     arguments: '-c Release'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'test'
+    projects: '$(solution)'
+
 - task: PowerShell@1
   displayName: 'PowerShell Script'
   condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
