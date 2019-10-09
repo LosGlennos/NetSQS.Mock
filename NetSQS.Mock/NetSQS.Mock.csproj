@@ -5,15 +5,17 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Martin Fylke</Authors>
     <Company />
-    <PackageProjectUrl>https://github.com/LosGlennos/NetSQS</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/LosGlennos/NetSQS</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/LosGlennos/NetSQS.Mock</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LosGlennos/NetSQS.Mock</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>0.0.2</Version>
+    <Version>1.0.0</Version>
+    <Description>A mocking library used to accompany NetSQS.</Description>
+    <PackageReleaseNotes>Upped version to correspond with latest release of NetSQS</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetSQS" Version="0.0.8" />
+    <PackageReference Include="NetSQS" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
