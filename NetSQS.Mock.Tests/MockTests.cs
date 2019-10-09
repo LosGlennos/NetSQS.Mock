@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon.SQS.Model;
 using Xunit;
@@ -171,6 +172,21 @@ namespace NetSQS.Mock.Tests
 
             Assert.Equal(1, queuesOnClientBeforeDeletion.Count);
             Assert.Equal(0, queuesOnClientAfterDeletion.Count);
+        }
+
+        [Fact]
+        public async Task MockGetMessagesOnQueue_ShouldContainSentMessage_WhenQueueExists()
+        {
+            var queueName = "mockQueue.fifo";
+            var messageContents = "Hello World!";
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(queueName);
+            await client.SendMessageAsync(messageContents, queueName);
+
+            var actual = client.GetMessages(queueName);
+
+            Assert.Equal(1, actual.Count);
+            Assert.Equal(messageContents, actual.First());
         }
     }
 }

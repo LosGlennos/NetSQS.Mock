@@ -22,6 +22,11 @@ namespace NetSQS.Mock
             };
         }
 
+        public Queue<string> GetMessages(string queueName)
+        {
+            return MockClientObject.Queues[queueName];
+        }
+
         public async Task<string> SendMessageAsync(string message, string queueName)
         {
             MockClientObject.Queues.TryGetValue(queueName, out var queue);
