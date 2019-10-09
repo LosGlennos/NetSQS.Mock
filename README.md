@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_apis/build/status/LosGlennos.NetSQS.Mock?branchName=master)](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_build/latest?definitionId=2&branchName=master)
+
 # NetSQS.Mock
 
 A mocking library to use together with NetSQS. Is used to simplify testing.
