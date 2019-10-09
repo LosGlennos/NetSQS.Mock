@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_apis/build/status/LosGlennos.NetSQS.Mock?branchName=master)](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_build/latest?definitionId=2&branchName=master)
+[![Build Status](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_apis/build/status/LosGlennos.NetSQS.Mock?branchName=master)](https://dev.azure.com/martinhugosvensson/martinhugosvensson/_build/latest?definitionId=2&branchName=master) [![Build Status](https://img.shields.io/nuget/v/NetSQS.Mock)](https://img.shields.io/nuget/v/NetSQS.Mock)
 
 # NetSQS.Mock
 
