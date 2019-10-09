@@ -2,7 +2,7 @@
 
 # NetSQS.Mock
 
-A mocking library to use together with NetSQS. Is used to simplify testing.
+A mocking library to use together with NetSQS. Is used to simplify testing of the NetSQS implementation.
 
 ## Usage
 
