@@ -37,7 +37,7 @@ steps:
   displayName: dotnet test
   inputs:
     command: test
-    arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+    arguments: '--configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
     projects: '$(solution)'
     nobuild: true
 
