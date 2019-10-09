@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>NetSQS.Mock</id>
+    <version>#{VERSION}#</version>
+    <title>NetSQS.Mock</title>
+    <authors>Martin Fylke</authors>
+    <owners>Martin Fylke</owners>
+    <licenseUrl>https://github.com/LosGlennos/NetSQS.Mock/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/LosGlennos/NetSQS.Mock</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A mock SQS client to accompany NetSQS for testing purposes</description>
+  </metadata>
+</package>

@@ -9,9 +9,10 @@
     <RepositoryUrl>https://github.com/LosGlennos/NetSQS.Mock</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Description>A mocking library used to accompany NetSQS.</Description>
-    <PackageReleaseNotes>Upped version to correspond with latest release of NetSQS</PackageReleaseNotes>
+    <PackageReleaseNotes>Expose messages on queue for testing purposes
+</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
