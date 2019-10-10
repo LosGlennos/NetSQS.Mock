@@ -10,5 +10,8 @@
     <projectUrl>https://github.com/LosGlennos/NetSQS.Mock</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A mock SQS client to accompany NetSQS for testing purposes</description>
+    <dependencies>
+      <dependency id="NetSQS" version="1.1.5" />
+    </dependencies>
   </metadata>
 </package>
