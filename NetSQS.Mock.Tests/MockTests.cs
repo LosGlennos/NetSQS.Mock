@@ -72,13 +72,13 @@ namespace NetSQS.Mock.Tests
         private bool _messagePicked;
 
         [Fact]
-        public async Task MockPollQueueAsync_ShouldRetrieveMessage_WhenQueueAndMessageExists()
+        public async Task MockStartMessageReceiver_ShouldRetrieveMessage_WhenQueueAndMessageExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
             await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
-            var cancellationToken = client.PollQueueAsync("mockQueue.fifo", 1, 1, message =>
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, message =>
             {
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
@@ -92,13 +92,13 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockPollQueueAsync_ShouldRetrieveMessageWithAsyncProcessor_WhenQueueAndMessageExists()
+        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithAsyncProcessor_WhenQueueAndMessageExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
             await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
-            var cancellationToken = client.PollQueueAsync("mockQueue.fifo", 1, 1, async (message) =>
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, async (message) =>
             {
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
@@ -112,19 +112,20 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockPollQueueWithRetryAsync_ShouldRetrieveMessage_WhenQueueAndMessageExists()
+        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithRetry_WhenQueueAndMessageExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
             await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
-            var cancellationToken = await client.PollQueueWithRetryAsync("mockQueue.fifo", 1, 1, 10, 1, 10, message =>
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, 10, 1, 10, message =>
             {
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
                 return true;
             });
 
+
             Task.Delay(1000).Wait();
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
@@ -132,13 +133,13 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockPollQueueWithRetryAsync_ShouldRetrieveMessageWithAsyncMessageProcessor_WhenQueueAndMessageExists()
+        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithAsyncMessageProcessor_WhenQueueAndMessageExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
             await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
-            var cancellationToken = await client.PollQueueWithRetryAsync("mockQueue.fifo", 1, 1, 10, 1, 10, async message =>
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, 10, 1, 10, async message =>
             {
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
@@ -152,12 +153,12 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockPollQueueWithRetryAsync_ShouldThrowQueueDoesNotExistException_WhenQueueDoesNotExist()
+        public void MockStartMessageReceiver_ShouldThrowQueueDoesNotExistException_WhenQueueDoesNotExist()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
 
-            await Assert.ThrowsAsync<QueueDoesNotExistException>(() =>
-                client.PollQueueWithRetryAsync("mockQueue.fifo", 1, 1, 3, 1, 1, message => true));
+            Assert.Throws<QueueDoesNotExistException>(() =>
+                client.StartMessageReceiver("mockQueue.fifo", 1, 1, 3, 1, 1, message => true));
         }
 
         [Fact]

@@ -141,6 +141,70 @@ namespace NetSQS.Mock
             return PollQueueAsync(queueName, pollWaitTime, maxNumberOfMessagesPerPoll, messageProcessor);
         }
 
+        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+            int numRetries, int minBackOff, int maxBackOff, Func<string, Task<bool>> asyncMessageProcessor)
+        {
+            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
+
+            return StartMessageReceiver(queueName, pollWaitTime, maxNumberOfMessagesPerPoll, asyncMessageProcessor);
+        }
+
+        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+            int numRetries, int minBackOff, int maxBackOff, Func<string, bool> messageProcessor)
+        {
+            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
+
+            return StartMessageReceiver(queueName, pollWaitTime, maxNumberOfMessagesPerPoll, messageProcessor);
+        }
+
+        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+            Func<string, Task<bool>> asyncMessageProcessor)
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
+
+            Task.Run(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
+                    if (queue == null)
+                    {
+                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
+                    }
+
+                    var message = queue.Dequeue();
+                    await asyncMessageProcessor(message);
+                }
+            }, cancellationToken);
+
+            return cancellationTokenSource;
+        }
+
+        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+            Func<string, bool> messageProcessor)
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
+
+            Task.Run(() =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
+                    if (queue == null)
+                    {
+                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
+                    }
+
+                    var message = queue.Dequeue();
+                    messageProcessor(message);
+                }
+            }, cancellationToken);
+
+            return cancellationTokenSource;
+        }
+
         private void WaitForQueue(string queueName, int numRetries, int minBackOff, int maxBackOff)
         {
             for (var i = 0; i < numRetries; i++)
