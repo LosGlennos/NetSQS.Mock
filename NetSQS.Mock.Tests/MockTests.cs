@@ -209,6 +209,7 @@ namespace NetSQS.Mock.Tests
             var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, async (message) =>
             {
                 Assert.Single(client.GetMessages("mockQueue.fifo"));
+                Assert.True(client.GetMessages("mockQueue.fifo").First().IsLocked);
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
                 return await Task.FromResult(true);
@@ -217,6 +218,7 @@ namespace NetSQS.Mock.Tests
             Task.Delay(1000).Wait();
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
+            Assert.Empty(client.GetMessages("mockQueue.fifo"));
             _messagePicked = false;
         }
 
@@ -230,6 +232,7 @@ namespace NetSQS.Mock.Tests
             var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, async (message) =>
             {
                 Assert.Single(client.GetMessages("mockQueue.fifo"));
+                Assert.True(client.GetMessages("mockQueue.fifo").First().IsLocked);
                 Assert.Equal("Hello World!", message);
                 _messagePicked = true;
                 return await Task.FromResult(false);
@@ -239,6 +242,7 @@ namespace NetSQS.Mock.Tests
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             Assert.Single(client.GetMessages("mockQueue.fifo"));
+            Assert.False(client.GetMessages("mockQueue.fifo").First().IsLocked);
             _messagePicked = false;
         }
     }

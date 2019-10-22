@@ -109,6 +109,7 @@ namespace NetSQS.Mock
 
                     var successful = await asyncMessageProcessor(message);
                     if (successful) queue.Dequeue();
+                    else UnlockFirstMessageInQueue(queue);
                 }
             }, cancellationToken);
 
@@ -139,6 +140,7 @@ namespace NetSQS.Mock
 
                     var successful = messageProcessor(message);
                     if (successful) queue.Dequeue();
+                    else UnlockFirstMessageInQueue(queue);
                 }
             }, cancellationToken);
 
@@ -201,6 +203,7 @@ namespace NetSQS.Mock
 
                     var successful = await asyncMessageProcessor(message);
                     if (successful) queue.Dequeue();
+                    else UnlockFirstMessageInQueue(queue);
                 }
             }, cancellationToken);
 
@@ -231,6 +234,7 @@ namespace NetSQS.Mock
 
                     var successful = messageProcessor(message);
                     if (successful) queue.Dequeue();
+                    else UnlockFirstMessageInQueue(queue);
                 }
             }, cancellationToken);
 
@@ -240,6 +244,11 @@ namespace NetSQS.Mock
         private void LockFirstMessageInQueue(Queue<QueueMessage> queue)
         {
             queue.Peek().IsLocked = true;
+        }
+
+        private void UnlockFirstMessageInQueue(Queue<QueueMessage> queue)
+        {
+            queue.Peek().IsLocked = false;
         }
 
         private bool IsFifoQueue(string queueName)
