@@ -7,7 +7,6 @@ using Amazon.SQS.Model;
 
 namespace NetSQS.Mock
 {
-
     public class SQSClientMock : ISQSClient
     {
         private SQSClientMockObject MockClientObject { get; set; }
@@ -19,11 +18,11 @@ namespace NetSQS.Mock
             {
                 Endpoint = mockEndpoint,
                 Region = mockRegion,
-                Queues = new Dictionary<string, Queue<QueueMessage>>()
+                Queues = new Dictionary<string, Queue<string>>()
             };
         }
 
-        public Queue<QueueMessage> GetMessages(string queueName)
+        public Queue<string> GetMessages(string queueName)
         {
             return MockClientObject.Queues[queueName];
         }
@@ -36,12 +35,7 @@ namespace NetSQS.Mock
                 throw new QueueDoesNotExistException($"Queue: {queueName} does not exist");
             }
 
-            queue.Enqueue(new QueueMessage
-            {
-                IsLocked = false,
-                Message = message
-            });
-
+            queue.Enqueue(message);
             MockClientObject.Queues[queueName] = queue;
 
             return "theMessageId";
@@ -68,7 +62,7 @@ namespace NetSQS.Mock
                 }
             }
 
-            MockClientObject.Queues.Add(queueName, new Queue<QueueMessage>());
+            MockClientObject.Queues.Add(queueName, new Queue<string>());
             return await Task.FromResult($"https://{MockClientObject.Region}/queue/{queueName}");
         }
 
@@ -99,13 +93,8 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    
-                    var message = LockAndPeekFirstMessageInQueue(queue);
-
-                    var successful = await asyncMessageProcessor(message);
-                    if (successful) queue.Dequeue();
+                    var message = queue.Dequeue();
+                    await asyncMessageProcessor(message);
                 }
             }, cancellationToken);
 
@@ -128,13 +117,8 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    
-                    var message = LockAndPeekFirstMessageInQueue(queue);
-
-                    var successful = messageProcessor(message);
-                    if (successful) queue.Dequeue();
+                    var message = queue.Dequeue();
+                    messageProcessor(message);
                 }
             }, cancellationToken);
 
@@ -189,13 +173,8 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-
-                    var message = LockAndPeekFirstMessageInQueue(queue);
-
-                    var successful = await asyncMessageProcessor(message);
-                    if (successful) queue.Dequeue();
+                    var message = queue.Dequeue();
+                    await asyncMessageProcessor(message);
                 }
             }, cancellationToken);
 
@@ -218,13 +197,8 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-
-                    var message = LockAndPeekFirstMessageInQueue(queue);
-
-                    var successful = messageProcessor(message);
-                    if (successful) queue.Dequeue();
+                    var message = queue.Dequeue();
+                    messageProcessor(message);
                 }
             }, cancellationToken);
 
@@ -250,24 +224,11 @@ namespace NetSQS.Mock
             }
         }
 
-        private static string LockAndPeekFirstMessageInQueue(Queue<QueueMessage> queue)
-        {
-            queue.Peek().IsLocked = true;
-            var message = queue.Peek().Message;
-            return message;
-        }
-
         private class SQSClientMockObject
         {
             public string Endpoint { get; set; }
             public string Region { get; set; }
-            public Dictionary<string, Queue<QueueMessage>> Queues { get; set; }
-        }
-
-        public class QueueMessage
-        {
-            public string Message { get; set; }
-            public bool IsLocked { get; set; }
+            public Dictionary<string, Queue<string>> Queues { get; set; }
         }
     }
 }
