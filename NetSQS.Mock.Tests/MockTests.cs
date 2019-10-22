@@ -52,6 +52,14 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
+        public async Task MockCreateStandardQueueAsync_ShouldThrowArgumentException_WhenQueueNameEndsWithFifo()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+
+            await Assert.ThrowsAsync<ArgumentException>(() => client.CreateStandardQueueAsync("test.fifo"));
+        }
+
+        [Fact]
         public async Task MockSendMessageAsync_ShouldPutAMessageOnTheQueue_WhenQueueExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
@@ -137,7 +145,6 @@ namespace NetSQS.Mock.Tests
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
-            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
             var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, 10, 1, 10, async message =>
             {
@@ -145,6 +152,8 @@ namespace NetSQS.Mock.Tests
                 _messagePicked = true;
                 return await Task.FromResult(true);
             });
+
+            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
 
             Task.Delay(1000).Wait();
             cancellationToken.Cancel();
@@ -171,8 +180,8 @@ namespace NetSQS.Mock.Tests
             await client.DeleteQueueAsync("mockQueue.fifo");
             var queuesOnClientAfterDeletion = await client.ListQueuesAsync();
 
-            Assert.Equal(1, queuesOnClientBeforeDeletion.Count);
-            Assert.Equal(0, queuesOnClientAfterDeletion.Count);
+            Assert.Single(queuesOnClientBeforeDeletion);
+            Assert.Empty(queuesOnClientAfterDeletion);
         }
 
         [Fact]
@@ -186,8 +195,51 @@ namespace NetSQS.Mock.Tests
 
             var actual = client.GetMessages(queueName);
 
-            Assert.Equal(1, actual.Count);
-            Assert.Equal(messageContents, actual.First());
+            Assert.Single(actual);
+            Assert.Equal(messageContents, actual.First().Message);
+        }
+
+        [Fact]
+        public async Task MockQueue_ShouldNotPickMessageFromQueue_UntilAcked()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
+            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
+
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, async (message) =>
+            {
+                Assert.Single(client.GetMessages("mockQueue.fifo"));
+                Assert.Equal("Hello World!", message);
+                _messagePicked = true;
+                return await Task.FromResult(true);
+            });
+
+            Task.Delay(1000).Wait();
+            cancellationToken.Cancel();
+            Assert.True(_messagePicked);
+            _messagePicked = false;
+        }
+
+        [Fact]
+        public async Task MockQueue_ShouldNotPickMessageFromQueue_IfFalseIsReturned()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
+            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
+
+            var cancellationToken = client.StartMessageReceiver("mockQueue.fifo", 1, 1, async (message) =>
+            {
+                Assert.Single(client.GetMessages("mockQueue.fifo"));
+                Assert.Equal("Hello World!", message);
+                _messagePicked = true;
+                return await Task.FromResult(false);
+            });
+
+            Task.Delay(1000).Wait();
+            cancellationToken.Cancel();
+            Assert.True(_messagePicked);
+            Assert.Single(client.GetMessages("mockQueue.fifo"));
+            _messagePicked = false;
         }
     }
 }

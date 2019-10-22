@@ -7,6 +7,7 @@ using Amazon.SQS.Model;
 
 namespace NetSQS.Mock
 {
+
     public class SQSClientMock : ISQSClient
     {
         private SQSClientMockObject MockClientObject { get; set; }
@@ -18,11 +19,11 @@ namespace NetSQS.Mock
             {
                 Endpoint = mockEndpoint,
                 Region = mockRegion,
-                Queues = new Dictionary<string, Queue<string>>()
+                Queues = new Dictionary<string, Queue<QueueMessage>>()
             };
         }
 
-        public Queue<string> GetMessages(string queueName)
+        public Queue<QueueMessage> GetMessages(string queueName)
         {
             return MockClientObject.Queues[queueName];
         }
@@ -35,7 +36,12 @@ namespace NetSQS.Mock
                 throw new QueueDoesNotExistException($"Queue: {queueName} does not exist");
             }
 
-            queue.Enqueue(message);
+            queue.Enqueue(new QueueMessage
+            {
+                IsLocked = false,
+                Message = message
+            });
+
             MockClientObject.Queues[queueName] = queue;
 
             return "theMessageId";
@@ -54,15 +60,17 @@ namespace NetSQS.Mock
         public async Task<string> CreateQueueAsync(string queueName, bool isFifo, bool isEncrypted, int retentionPeriod = 345600,
             int visibilityTimeout = 30)
         {
-            if (isFifo)
+            if (isFifo && !queueName.EndsWith(".fifo"))
             {
-                if (queueName.Length <= 5 || queueName.Substring(queueName.Length - 5) != ".fifo")
-                {
-                    throw new ArgumentException("Queue name must end with '.fifo'", nameof(queueName));
-                }
+                throw new ArgumentException("Queue name must end with '.fifo'", nameof(queueName));
             }
 
-            MockClientObject.Queues.Add(queueName, new Queue<string>());
+            if (!isFifo && queueName.EndsWith(".fifo"))
+            {
+                throw new ArgumentException("Queue name is not allowed to end with .fifo if it is not specified as a FIFO-queue", nameof(queueName));
+            }
+
+            MockClientObject.Queues.Add(queueName, new Queue<QueueMessage>());
             return await Task.FromResult($"https://{MockClientObject.Region}/queue/{queueName}");
         }
 
@@ -93,8 +101,14 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    var message = queue.Dequeue();
-                    await asyncMessageProcessor(message);
+                    if (!queue.Any()) continue;
+                    if (queue.Peek().IsLocked) continue;
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+
+                    var message = PeekFirstMessageInQueue(queue);
+
+                    var successful = await asyncMessageProcessor(message);
+                    if (successful) queue.Dequeue();
                 }
             }, cancellationToken);
 
@@ -117,8 +131,14 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    var message = queue.Dequeue();
-                    messageProcessor(message);
+                    if (!queue.Any()) continue;
+                    if (queue.Peek().IsLocked) continue;
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+
+                    var message = PeekFirstMessageInQueue(queue);
+
+                    var successful = messageProcessor(message);
+                    if (successful) queue.Dequeue();
                 }
             }, cancellationToken);
 
@@ -173,8 +193,14 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    var message = queue.Dequeue();
-                    await asyncMessageProcessor(message);
+                    if (!queue.Any()) continue;
+                    if (queue.Peek().IsLocked) continue;
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+
+                    var message = PeekFirstMessageInQueue(queue);
+
+                    var successful = await asyncMessageProcessor(message);
+                    if (successful) queue.Dequeue();
                 }
             }, cancellationToken);
 
@@ -197,12 +223,28 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    var message = queue.Dequeue();
-                    messageProcessor(message);
+                    if (!queue.Any()) continue;
+                    if (queue.Peek().IsLocked) continue;
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+                    
+                    var message = PeekFirstMessageInQueue(queue);
+
+                    var successful = messageProcessor(message);
+                    if (successful) queue.Dequeue();
                 }
             }, cancellationToken);
 
             return cancellationTokenSource;
+        }
+
+        private void LockFirstMessageInQueue(Queue<QueueMessage> queue)
+        {
+            queue.Peek().IsLocked = true;
+        }
+
+        private bool IsFifoQueue(string queueName)
+        {
+            return queueName.EndsWith(".fifo");
         }
 
         private void WaitForQueue(string queueName, int numRetries, int minBackOff, int maxBackOff)
@@ -224,11 +266,23 @@ namespace NetSQS.Mock
             }
         }
 
+        private static string PeekFirstMessageInQueue(Queue<QueueMessage> queue)
+        {
+            var message = queue.Peek().Message;
+            return message;
+        }
+
         private class SQSClientMockObject
         {
             public string Endpoint { get; set; }
             public string Region { get; set; }
-            public Dictionary<string, Queue<string>> Queues { get; set; }
+            public Dictionary<string, Queue<QueueMessage>> Queues { get; set; }
+        }
+
+        public class QueueMessage
+        {
+            public string Message { get; set; }
+            public bool IsLocked { get; set; }
         }
     }
 }
