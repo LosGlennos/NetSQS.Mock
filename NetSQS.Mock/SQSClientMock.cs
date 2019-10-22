@@ -60,12 +60,14 @@ namespace NetSQS.Mock
         public async Task<string> CreateQueueAsync(string queueName, bool isFifo, bool isEncrypted, int retentionPeriod = 345600,
             int visibilityTimeout = 30)
         {
-            if (isFifo)
+            if (isFifo && !queueName.EndsWith(".fifo"))
             {
-                if (queueName.Length <= 5 || queueName.Substring(queueName.Length - 5) != ".fifo")
-                {
-                    throw new ArgumentException("Queue name must end with '.fifo'", nameof(queueName));
-                }
+                throw new ArgumentException("Queue name must end with '.fifo'", nameof(queueName));
+            }
+
+            if (!isFifo && queueName.EndsWith(".fifo"))
+            {
+                throw new ArgumentException("Queue name is not allowed to end with .fifo if it is not specified as a FIFO-queue", nameof(queueName));
             }
 
             MockClientObject.Queues.Add(queueName, new Queue<QueueMessage>());

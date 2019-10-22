@@ -52,6 +52,14 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
+        public async Task MockCreateStandardQueueAsync_ShouldThrowArgumentException_WhenQueueNameEndsWithFifo()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+
+            await Assert.ThrowsAsync<ArgumentException>(() => client.CreateStandardQueueAsync("test.fifo"));
+        }
+
+        [Fact]
         public async Task MockSendMessageAsync_ShouldPutAMessageOnTheQueue_WhenQueueExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
