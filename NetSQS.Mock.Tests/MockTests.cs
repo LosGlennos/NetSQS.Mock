@@ -249,7 +249,7 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task AwaitOneMessageProcessed_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerSucceeds()
+        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerSucceeds()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
@@ -265,14 +265,14 @@ namespace NetSQS.Mock.Tests
             var stopwatch = new Stopwatch();
 
             stopwatch.Start();
-            await client.AwaitOneMessageProcessed("mockQueue.fifo");
+            await client.AwaitMessageProcessedAttempt("mockQueue.fifo");
             stopwatch.Stop();
 
             Assert.True(stopwatch.ElapsedMilliseconds > 900);
         }
 
         [Fact]
-        public async Task AwaitOneMessageProcessed_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerFails()
+        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerFails()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
@@ -288,7 +288,7 @@ namespace NetSQS.Mock.Tests
             var stopwatch = new Stopwatch();
 
             stopwatch.Start();
-            await client.AwaitOneMessageProcessed("mockQueue.fifo");
+            await client.AwaitMessageProcessedAttempt("mockQueue.fifo");
             stopwatch.Stop();
 
             Assert.True(stopwatch.ElapsedMilliseconds > 900);

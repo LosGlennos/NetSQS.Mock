@@ -174,7 +174,13 @@ namespace NetSQS.Mock
             return cancellationTokenSource;
         }
 
-        public async Task AwaitOneMessageProcessed(string queueName)
+        /// <summary>
+        /// Wait until the message listener has attempted to process one message.
+        /// This is reset by putting a message on the queue using SendMessageAsync.
+        /// </summary>
+        /// <param name="queueName"></param>
+        /// <returns></returns>
+        public async Task AwaitMessageProcessedAttempt(string queueName)
         {
             if (!MockClientObject.QueueMessageProcessed.ContainsKey(queueName))
                 throw new QueueDoesNotExistException($"Queue {queueName} does not exist");
