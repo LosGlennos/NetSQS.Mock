@@ -97,7 +97,7 @@ namespace NetSQS.Mock.Tests
                 return true;
             });
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             _messagePicked = false;
@@ -117,7 +117,7 @@ namespace NetSQS.Mock.Tests
                 return await Task.FromResult(true);
             });
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             _messagePicked = false;
@@ -138,7 +138,7 @@ namespace NetSQS.Mock.Tests
             });
 
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             _messagePicked = false;
@@ -159,7 +159,7 @@ namespace NetSQS.Mock.Tests
 
             await client.SendMessageAsync("Hello World!", FifoQueueName);
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             _messagePicked = false;
@@ -219,7 +219,7 @@ namespace NetSQS.Mock.Tests
                 return await Task.FromResult(true);
             });
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             Assert.Empty(client.GetMessages(FifoQueueName));
@@ -242,7 +242,8 @@ namespace NetSQS.Mock.Tests
                 return await Task.FromResult(false);
             });
 
-            Task.Delay(1000).Wait();
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
+
             cancellationToken.Cancel();
             Assert.True(_messagePicked);
             Assert.Single(client.GetMessages(FifoQueueName));
