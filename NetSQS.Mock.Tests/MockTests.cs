@@ -251,7 +251,7 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerSucceeds()
+        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageProcessorHasBeenCalled_WhenMessageProcessorSucceeds()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync(FifoQueueName);
@@ -274,7 +274,7 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerFails()
+        public async Task AwaitMessageProcessedAttempt_ShouldWaitUntilMessageProcessorHasBeenCalled_WhenMessageProcessorFails()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync(FifoQueueName);
