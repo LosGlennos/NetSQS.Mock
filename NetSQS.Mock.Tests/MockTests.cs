@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS.Model;
 using Xunit;
@@ -244,6 +246,52 @@ namespace NetSQS.Mock.Tests
             Assert.Single(client.GetMessages("mockQueue.fifo"));
             Assert.False(client.GetMessages("mockQueue.fifo").First().IsLocked);
             _messagePicked = false;
+        }
+
+        [Fact]
+        public async Task AwaitOneMessageProcessed_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerSucceeds()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
+
+            client.StartMessageReceiver("mockQueue.fifo", 1, 1,
+                async (message) =>
+                {
+                    await Task.Delay(1000);
+                    return true;
+                });
+
+            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
+            var stopwatch = new Stopwatch();
+
+            stopwatch.Start();
+            await client.AwaitOneMessageProcessed("mockQueue.fifo");
+            stopwatch.Stop();
+
+            Assert.True(stopwatch.ElapsedMilliseconds > 900);
+        }
+
+        [Fact]
+        public async Task AwaitOneMessageProcessed_ShouldWaitUntilMessageHasBeenProcessed_WhenListenerFails()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync("mockQueue.fifo");
+
+            client.StartMessageReceiver("mockQueue.fifo", 1, 1,
+                async (message) =>
+                {
+                    await Task.Delay(1000);
+                    return false;
+                });
+
+            await client.SendMessageAsync("Hello World!", "mockQueue.fifo");
+            var stopwatch = new Stopwatch();
+
+            stopwatch.Start();
+            await client.AwaitOneMessageProcessed("mockQueue.fifo");
+            stopwatch.Stop();
+
+            Assert.True(stopwatch.ElapsedMilliseconds > 900);
         }
     }
 }

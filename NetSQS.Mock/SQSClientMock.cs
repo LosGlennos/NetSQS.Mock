@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -41,6 +41,7 @@ namespace NetSQS.Mock
             });
 
             MockClientObject.Queues[queueName] = queue;
+            MockClientObject.QueueMessageProcessed[queueName] = false;
 
             return "theMessageId";
         }
@@ -166,10 +167,22 @@ namespace NetSQS.Mock
                     var successful = await asyncMessageProcessor(message);
                     if (successful) queue.Dequeue();
                     else UnlockFirstMessageInQueue(queue);
+                    MockClientObject.QueueMessageProcessed[queueName] = true;
                 }
             }, cancellationToken);
 
             return cancellationTokenSource;
+        }
+
+        public async Task AwaitOneMessageProcessed(string queueName)
+        {
+            if (!MockClientObject.QueueMessageProcessed.ContainsKey(queueName))
+                throw new QueueDoesNotExistException($"Queue {queueName} does not exist");
+
+            while (!MockClientObject.QueueMessageProcessed[queueName])
+            {
+                await Task.Delay(10);
+            }
         }
 
         private void LockFirstMessageInQueue(Queue<QueueMessage> queue)
@@ -217,6 +230,7 @@ namespace NetSQS.Mock
             public string Endpoint { get; set; }
             public string Region { get; set; }
             public Dictionary<string, Queue<QueueMessage>> Queues { get; } = new Dictionary<string, Queue<QueueMessage>>();
+            public Dictionary<string, bool> QueueMessageProcessed { get; } = new Dictionary<string, bool>();
         }
 
         public class QueueMessage
