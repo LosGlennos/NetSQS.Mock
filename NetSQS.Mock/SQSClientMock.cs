@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,14 +12,12 @@ namespace NetSQS.Mock
     {
         private SQSClientMockObject MockClientObject { get; set; }
 
-
         public SQSClientMock(string mockEndpoint, string mockRegion)
         {
             MockClientObject = new SQSClientMockObject
             {
                 Endpoint = mockEndpoint,
-                Region = mockRegion,
-                Queues = new Dictionary<string, Queue<QueueMessage>>()
+                Region = mockRegion
             };
         }
 
@@ -88,63 +86,13 @@ namespace NetSQS.Mock
         public CancellationTokenSource PollQueueAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, Task<bool>> asyncMessageProcessor)
         {
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            Task.Run(async () =>
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
-                    if (queue == null)
-                    {
-                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
-                    }
-
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
-
-                    var message = PeekFirstMessageInQueue(queue);
-
-                    var successful = await asyncMessageProcessor(message);
-                    if (successful) queue.Dequeue();
-                    else UnlockFirstMessageInQueue(queue);
-                }
-            }, cancellationToken);
-
-            return cancellationTokenSource;
+            return StartMessageReceiver(queueName, asyncMessageProcessor);
         }
 
         public CancellationTokenSource PollQueueAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, bool> messageProcessor)
         {
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            Task.Run(() =>
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
-                    if (queue == null)
-                    {
-                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
-                    }
-
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
-
-                    var message = PeekFirstMessageInQueue(queue);
-
-                    var successful = messageProcessor(message);
-                    if (successful) queue.Dequeue();
-                    else UnlockFirstMessageInQueue(queue);
-                }
-            }, cancellationToken);
-
-            return cancellationTokenSource;
+            return StartMessageReceiver(queueName, async (arg) => messageProcessor(arg));
         }
 
         public async Task<CancellationTokenSource> PollQueueWithRetryAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
@@ -182,6 +130,17 @@ namespace NetSQS.Mock
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, Task<bool>> asyncMessageProcessor)
         {
+            return StartMessageReceiver(queueName, asyncMessageProcessor);
+        }
+
+        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+            Func<string, bool> messageProcessor)
+        {
+            return StartMessageReceiver(queueName, async (arg) => messageProcessor(arg));
+        }
+
+        private CancellationTokenSource StartMessageReceiver(string queueName, Func<string, Task<bool>> asyncMessageProcessor)
+        {
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
@@ -195,44 +154,16 @@ namespace NetSQS.Mock
                         throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
                     }
 
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+                    if (!queue.Any() || queue.Peek().IsLocked)
+                    {
+                        await Task.Delay(10, cancellationToken);
+                        continue;
+                    }
 
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
                     var message = PeekFirstMessageInQueue(queue);
 
                     var successful = await asyncMessageProcessor(message);
-                    if (successful) queue.Dequeue();
-                    else UnlockFirstMessageInQueue(queue);
-                }
-            }, cancellationToken);
-
-            return cancellationTokenSource;
-        }
-
-        public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
-            Func<string, bool> messageProcessor)
-        {
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            Task.Run(() =>
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
-                    if (queue == null)
-                    {
-                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
-                    }
-
-                    if (!queue.Any()) continue;
-                    if (queue.Peek().IsLocked) continue;
-                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
-                    
-                    var message = PeekFirstMessageInQueue(queue);
-
-                    var successful = messageProcessor(message);
                     if (successful) queue.Dequeue();
                     else UnlockFirstMessageInQueue(queue);
                 }
@@ -285,7 +216,7 @@ namespace NetSQS.Mock
         {
             public string Endpoint { get; set; }
             public string Region { get; set; }
-            public Dictionary<string, Queue<QueueMessage>> Queues { get; set; }
+            public Dictionary<string, Queue<QueueMessage>> Queues { get; } = new Dictionary<string, Queue<QueueMessage>>();
         }
 
         public class QueueMessage
