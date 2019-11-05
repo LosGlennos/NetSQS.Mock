@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetSQS" Version="1.2.2" />
+    <PackageReference Include="NetSQS" Version="1.3.0" />
   </ItemGroup>
 
 </Project>

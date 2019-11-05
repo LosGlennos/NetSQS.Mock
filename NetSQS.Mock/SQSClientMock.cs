@@ -84,34 +84,6 @@ namespace NetSQS.Mock
             return await Task.FromResult(queues);
         }
 
-        public CancellationTokenSource PollQueueAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
-            Func<string, Task<bool>> asyncMessageProcessor)
-        {
-            return StartMessageReceiverInternal(queueName, asyncMessageProcessor);
-        }
-
-        public CancellationTokenSource PollQueueAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
-            Func<string, bool> messageProcessor)
-        {
-            return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg));
-        }
-
-        public async Task<CancellationTokenSource> PollQueueWithRetryAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
-            int minBackOff, int maxBackOff, Func<string, Task<bool>> asyncMessageProcessor)
-        {
-            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
-
-            return PollQueueAsync(queueName, pollWaitTime, maxNumberOfMessagesPerPoll, asyncMessageProcessor);
-        }
-
-        public async Task<CancellationTokenSource> PollQueueWithRetryAsync(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
-            int minBackOff, int maxBackOff, Func<string, bool> messageProcessor)
-        {
-            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
-
-            return PollQueueAsync(queueName, pollWaitTime, maxNumberOfMessagesPerPoll, messageProcessor);
-        }
-
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             int numRetries, int minBackOff, int maxBackOff, Func<string, Task<bool>> asyncMessageProcessor)
         {
@@ -120,12 +92,12 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, asyncMessageProcessor);
         }
 
-        public void StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
+        public Task StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
             int minBackOff, int maxBackOff, Func<string, Task<bool>> asyncMessageProcessor, CancellationToken cancellationToken)
         {
             WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
 
-            StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
+            return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
         }
 
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
@@ -136,12 +108,12 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg));
         }
 
-        public void StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
+        public Task StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, int numRetries,
             int minBackOff, int maxBackOff, Func<string, bool> messageProcessor, CancellationToken cancellationToken)
         {
             WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
 
-            StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
+            return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
         }
 
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
@@ -150,10 +122,10 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, asyncMessageProcessor);
         }
 
-        public void StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
+        public Task StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, Task<bool>> asyncMessageProcessor, CancellationToken cancellationToken)
         {
-            StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
+            return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
         }
 
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
@@ -162,10 +134,10 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg));
         }
 
-        public void StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, Func<string, bool> messageProcessor,
+        public Task StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll, Func<string, bool> messageProcessor,
             CancellationToken cancellationToken)
         {
-            StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
+            return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
         }
 
         private CancellationTokenSource StartMessageReceiverInternal(string queueName, Func<string, Task<bool>> asyncMessageProcessor)
@@ -178,9 +150,9 @@ namespace NetSQS.Mock
             return cancellationTokenSource;
         }
 
-        private void StartMessageReceiverInternal(string queueName, Func<string, Task<bool>> asyncMessageProcessor, CancellationToken cancellationToken)
+        private Task StartMessageReceiverInternal(string queueName, Func<string, Task<bool>> asyncMessageProcessor, CancellationToken cancellationToken)
         {
-            Task.Run(async () =>
+            return Task.Run(async () =>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
