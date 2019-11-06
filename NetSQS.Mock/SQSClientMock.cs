@@ -84,6 +84,7 @@ namespace NetSQS.Mock
             return await Task.FromResult(queues);
         }
 
+        [Obsolete("Use StartMessageReceiver-method that takes cancellation token as a parameter. This method will be removed in future releases", true)]
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             int numRetries, int minBackOff, int maxBackOff, Func<string, Task<bool>> asyncMessageProcessor)
         {
@@ -100,6 +101,7 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
         }
 
+        [Obsolete("Use StartMessageReceiver-method that takes cancellation token as a parameter. This method will be removed in future releases", true)]
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             int numRetries, int minBackOff, int maxBackOff, Func<string, bool> messageProcessor)
         {
@@ -116,6 +118,7 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
         }
 
+        [Obsolete("Use StartMessageReceiver-method that takes cancellation token as a parameter. This method will be removed in future releases", true)]
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, Task<bool>> asyncMessageProcessor)
         {
@@ -128,6 +131,7 @@ namespace NetSQS.Mock
             return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
         }
 
+        [Obsolete("Use StartMessageReceiver-method that takes cancellation token as a parameter. This method will be removed in future releases", true)]
         public CancellationTokenSource StartMessageReceiver(string queueName, int pollWaitTime, int maxNumberOfMessagesPerPoll,
             Func<string, bool> messageProcessor)
         {
