@@ -348,5 +348,27 @@ namespace NetSQS.Mock.Tests
 
             Assert.Empty(client.GetMessages(FifoQueueName));
         }
+
+        [Fact]
+        public async Task SQSMessage_ShouldNotRemoveMessageFromQueue_WhenNotAcked()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(FifoQueueName);
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
+
+
+            client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
+            {
+                Assert.Equal("Bar", message.Body);
+            }, cancellationToken);
+
+            await client.SendMessageAsync("Bar", FifoQueueName);
+
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
+
+            Assert.Single(client.GetMessages(FifoQueueName));
+        }
     }
 }

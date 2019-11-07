@@ -203,13 +203,14 @@ namespace NetSQS.Mock
 
                     if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
                     var message = PeekFirstMessageInQueue(queue);
-                    var sqsMessage = new SQSMessageMock(this, queueName, "MockReceiptHandle") 
+                    var sqsMessage = new SQSMessageMock(this, queueName, "MockReceiptHandle")
                     {
                         Body = message
                     };
 
                     await asyncMessageProcessor(sqsMessage);
                     UnlockFirstMessageInQueue(queue);
+                    MockClientObject.QueueMessageProcessed[queueName] = true;
                 }
             }, cancellationToken);
         }
@@ -298,7 +299,6 @@ namespace NetSQS.Mock
         {
             MockClientObject.Queues.TryGetValue(queueName, out var queue);
             await Task.Run(() => queue.Dequeue());
-            MockClientObject.QueueMessageProcessed[queueName] = true;
         }
 
         private class SQSClientMockObject
