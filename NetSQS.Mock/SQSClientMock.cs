@@ -183,6 +183,38 @@ namespace NetSQS.Mock
             }, cancellationToken);
         }
 
+        private Task StartMessageReceiverInternal(string queueName, Func<ISQSMessage, Task> asyncMessageProcessor, CancellationToken cancellationToken)
+        {
+            return Task.Run(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    MockClientObject.Queues.TryGetValue(queueName, out var queue);
+                    if (queue == null)
+                    {
+                        throw new QueueDoesNotExistException($"Queue {queueName} does not exist.");
+                    }
+
+                    if (!queue.Any() || queue.Peek().IsLocked)
+                    {
+                        await Task.Delay(10, cancellationToken);
+                        continue;
+                    }
+
+                    if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
+                    var message = PeekFirstMessageInQueue(queue);
+                    var sqsMessage = new SQSMessageMock(this, queueName, "MockReceiptHandle")
+                    {
+                        Body = message
+                    };
+
+                    await asyncMessageProcessor(sqsMessage);
+                    UnlockFirstMessageInQueue(queue);
+                    MockClientObject.QueueMessageProcessed[queueName] = true;
+                }
+            }, cancellationToken);
+        }
+
         /// <summary>
         /// Wait until the message listener has attempted to process one message,
         /// no matter if the attempt was successful or not.
@@ -203,12 +235,12 @@ namespace NetSQS.Mock
 
         private void LockFirstMessageInQueue(Queue<QueueMessage> queue)
         {
-            queue.Peek().IsLocked = true;
+            if (queue.Count > 0) queue.Peek().IsLocked = true;
         }
 
         private void UnlockFirstMessageInQueue(Queue<QueueMessage> queue)
         {
-            queue.Peek().IsLocked = false;
+            if (queue.Count > 0) queue.Peek().IsLocked = false;
         }
 
         private bool IsFifoQueue(string queueName)
@@ -239,6 +271,35 @@ namespace NetSQS.Mock
         {
             var message = queue.Peek().Message;
             return message;
+        }
+
+        public Task StartMessageReceiver(string queueName, int pollWaitTimeSeconds, int maxNumberOfMessagesPerPoll, Action<ISQSMessage> messageProcessor, CancellationToken cancellationToken)
+        {
+            return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
+        }
+
+        public Task StartMessageReceiver(string queueName, int pollWaitTimeSeconds, int maxNumberOfMessagesPerPoll, Func<ISQSMessage, Task> asyncMessageProcessor, CancellationToken cancellationToken)
+        {
+            return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
+        }
+
+        public Task StartMessageReceiver(string queueName, int pollWaitTimeSeconds, int maxNumberOfMessagesPerPoll, int numRetries, int minBackOff, int maxBackOff, Action<ISQSMessage> messageProcessor, CancellationToken cancellationToken)
+        {
+            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
+            return StartMessageReceiverInternal(queueName, async (arg) => messageProcessor(arg), cancellationToken);
+        }
+
+        public Task StartMessageReceiver(string queueName, int pollWaitTimeSeconds, int maxNumberOfMessagesPerPoll, int numRetries, int minBackOff, int maxBackOff, Func<ISQSMessage, Task> asyncMessageProcessor, CancellationToken cancellationToken)
+        {
+            WaitForQueue(queueName, numRetries, minBackOff, maxBackOff);
+            return StartMessageReceiverInternal(queueName, asyncMessageProcessor, cancellationToken);
+        }
+
+        public async Task DeleteMessageAsync(string queueName, string receiptHandle)
+        {
+            MockClientObject.Queues.TryGetValue(queueName, out var queue);
+            await Task.Run(() => queue.Dequeue());
+            MockClientObject.QueueMessageProcessed[queueName] = true;
         }
 
         private class SQSClientMockObject
