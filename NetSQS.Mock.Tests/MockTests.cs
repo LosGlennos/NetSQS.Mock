@@ -345,6 +345,7 @@ namespace NetSQS.Mock.Tests
             await client.SendMessageAsync("Bar", FifoQueueName);
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
+            cancellationTokenSource.Cancel();
 
             Assert.Empty(client.GetMessages(FifoQueueName));
         }
@@ -368,6 +369,7 @@ namespace NetSQS.Mock.Tests
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
 
+            cancellationTokenSource.Cancel();
             Assert.Single(client.GetMessages(FifoQueueName));
         }
     }

@@ -235,12 +235,12 @@ namespace NetSQS.Mock
 
         private void LockFirstMessageInQueue(Queue<QueueMessage> queue)
         {
-            queue.Peek().IsLocked = true;
+            if (queue.Count > 0) queue.Peek().IsLocked = true;
         }
 
         private void UnlockFirstMessageInQueue(Queue<QueueMessage> queue)
         {
-            queue.Peek().IsLocked = false;
+            if (queue.Count > 0) queue.Peek().IsLocked = false;
         }
 
         private bool IsFifoQueue(string queueName)
@@ -299,6 +299,7 @@ namespace NetSQS.Mock
         {
             MockClientObject.Queues.TryGetValue(queueName, out var queue);
             await Task.Run(() => queue.Dequeue());
+            MockClientObject.QueueMessageProcessed[queueName] = true;
         }
 
         private class SQSClientMockObject
