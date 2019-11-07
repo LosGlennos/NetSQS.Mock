@@ -324,5 +324,29 @@ namespace NetSQS.Mock.Tests
 
             Assert.True(stopwatch.ElapsedMilliseconds > 900);
         }
+
+        [Fact]
+        public async Task SQSMessage_ShouldRemoveMessageFromQueue_WhenAcked()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(FifoQueueName);
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
+            
+
+            client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
+            {
+                Assert.Equal("Bar", message.Body);
+
+                await message.Ack();
+            }, cancellationToken);
+
+            await client.SendMessageAsync("Bar", FifoQueueName);
+
+            await client.AwaitMessageProcessedAttempt(FifoQueueName);
+
+            Assert.Empty(client.GetMessages(FifoQueueName));
+        }
     }
 }

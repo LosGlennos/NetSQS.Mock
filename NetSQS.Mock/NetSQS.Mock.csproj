@@ -2,21 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Martin Fylke</Authors>
-    <Company />
-    <PackageProjectUrl>https://github.com/LosGlennos/NetSQS.Mock</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/LosGlennos/NetSQS.Mock</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.1.0</Version>
-    <Description>A mocking library used to accompany NetSQS.</Description>
-    <PackageReleaseNotes>Expose messages on queue for testing purposes
-</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetSQS" Version="1.3.1" />
+    <PackageReference Include="NetSQS" Version="1.4.0" />
   </ItemGroup>
 
 </Project>
