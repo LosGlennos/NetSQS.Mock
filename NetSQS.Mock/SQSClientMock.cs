@@ -26,7 +26,7 @@ namespace NetSQS.Mock
             return MockClientObject.Queues[queueName];
         }
 
-        public async Task<string> SendMessageAsync(string message, string queueName)
+        public async Task<string> SendMessageAsync(string message, string queueName, Dictionary<string, string> messageAttributes = null)
         {
             MockClientObject.Queues.TryGetValue(queueName, out var queue);
             if (queue == null)
@@ -37,7 +37,8 @@ namespace NetSQS.Mock
             queue.Enqueue(new QueueMessage
             {
                 IsLocked = false,
-                Message = message
+                Message = message,
+                MessageAttributes = messageAttributes
             });
 
             MockClientObject.Queues[queueName] = queue;
@@ -175,7 +176,7 @@ namespace NetSQS.Mock
                     if (IsFifoQueue(queueName)) LockFirstMessageInQueue(queue);
                     var message = PeekFirstMessageInQueue(queue);
 
-                    var successful = await asyncMessageProcessor(message);
+                    var successful = await asyncMessageProcessor(message.Message);
                     if (successful) queue.Dequeue();
                     else UnlockFirstMessageInQueue(queue);
                     MockClientObject.QueueMessageProcessed[queueName] = true;
@@ -205,7 +206,8 @@ namespace NetSQS.Mock
                     var message = PeekFirstMessageInQueue(queue);
                     var sqsMessage = new SQSMessageMock(this, queueName, "MockReceiptHandle")
                     {
-                        Body = message
+                        Body = message.Message,
+                        MessageAttributes = message.MessageAttributes
                     };
 
                     await asyncMessageProcessor(sqsMessage);
@@ -267,9 +269,9 @@ namespace NetSQS.Mock
             }
         }
 
-        private static string PeekFirstMessageInQueue(Queue<QueueMessage> queue)
+        private static QueueMessage PeekFirstMessageInQueue(Queue<QueueMessage> queue)
         {
-            var message = queue.Peek().Message;
+            var message = queue.Peek();
             return message;
         }
 
@@ -314,6 +316,7 @@ namespace NetSQS.Mock
         {
             public string Message { get; set; }
             public bool IsLocked { get; set; }
+            public Dictionary<string, string> MessageAttributes { get; set; }
         }
     }
 }
