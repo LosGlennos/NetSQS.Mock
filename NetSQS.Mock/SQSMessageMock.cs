@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace NetSQS.Mock
@@ -13,6 +14,7 @@ namespace NetSQS.Mock
 
         private SQSClientMock Client { get; set; }
         public string Body { get; set; }
+        public Dictionary<string, string> MessageAttributes { get; set; }
         private string QueueName { get; set; }
         private string ReceiptHandle { get; set; }
 
