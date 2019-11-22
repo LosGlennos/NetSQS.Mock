@@ -47,6 +47,32 @@ namespace NetSQS.Mock
             return "theMessageId";
         }
 
+        public async Task<IBatchResponse> SendMessageBatchAsync(BatchMessageRequest[] batchMessages, string queueName)
+        {
+            var response = new BatchResponse();
+            response.SendResults = new BatchResponse.SendResult[0];
+
+            foreach (var messageRequest in batchMessages)
+            {
+                var messageResult = new BatchResponse.SendResult {MessageRequest = messageRequest};
+                try
+                {
+                    messageResult.MessageId = await SendMessageAsync(messageRequest.Message, queueName, messageRequest.MessageAttributes);
+                    messageResult.Success = true;
+                }
+                catch (Exception e)
+                {
+                    messageResult.Error = e.ToString();
+                }
+
+                response.SendResults = response.SendResults.Append(messageResult).ToArray();
+            }
+
+            response.Success = response.SendResults.All(x => x.Success);
+
+            return response;
+        }
+
         public async Task<string> CreateStandardQueueAsync(string queueName)
         {
             return await CreateQueueAsync(queueName, false, false);

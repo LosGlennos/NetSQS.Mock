@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -71,6 +72,37 @@ namespace NetSQS.Mock.Tests
             var messageId = await client.SendMessageAsync("Hello World!", FifoQueueName);
 
             Assert.NotNull(messageId);
+        }
+
+        [Fact]
+        public async Task MockSendMessageBatchAsync_ShouldPutAMessageOnTheQueue_WhenQueueExists()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(FifoQueueName);
+
+            var batch = new List<BatchMessageRequest>
+            {
+                new BatchMessageRequest("testMessage1"),
+                new BatchMessageRequest("testMessage2", new Dictionary<string, string>
+                {
+                    {"key2", "value2"}
+                })
+            }.ToArray();
+
+            var response = await client.SendMessageBatchAsync(batch, FifoQueueName);
+
+            Assert.Empty(response.GetFailed());
+            Assert.Equal(2, response.GetSuccessful().Length);
+            Assert.True(response.Success);
+
+            Assert.True(response.SendResults[0].Success);
+            Assert.Equal("testMessage1", response.SendResults[0].MessageRequest.Message);
+            Assert.Null(response.SendResults[0].Error);
+
+            Assert.True(response.SendResults[1].Success);
+            Assert.Equal("testMessage2", response.SendResults[1].MessageRequest.Message);
+            Assert.Equal("value2", response.SendResults[1].MessageRequest.MessageAttributes["key2"]);
+            Assert.Null(response.SendResults[1].Error);
         }
 
         [Fact]
