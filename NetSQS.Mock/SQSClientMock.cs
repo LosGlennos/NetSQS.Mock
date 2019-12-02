@@ -330,6 +330,18 @@ namespace NetSQS.Mock
             MockClientObject.QueueMessageProcessed[queueName] = true;
         }
 
+        public async Task<NumberOfMessagesResponse> GetNumberOfMessagesOnQueue(string queueName)
+        {
+            if (!MockClientObject.Queues.ContainsKey(queueName))
+                throw new QueueDoesNotExistException($"Queue {queueName} does not exist");
+
+            return new NumberOfMessagesResponse
+            {
+                QueueName = queueName,
+                ApproximateNumberOfMessages = MockClientObject.Queues[queueName].Count
+            };
+        }
+
         private class SQSClientMockObject
         {
             public string Endpoint { get; set; }
