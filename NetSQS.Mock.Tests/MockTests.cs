@@ -365,7 +365,6 @@ namespace NetSQS.Mock.Tests
 
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
-            
 
             client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
             {
@@ -391,7 +390,6 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-
             client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
             {
                 Assert.Equal("Bar", message.Body);
@@ -403,6 +401,20 @@ namespace NetSQS.Mock.Tests
 
             cancellationTokenSource.Cancel();
             Assert.Single(client.GetMessages(FifoQueueName));
+        }
+
+        [Fact]
+        public async Task GetNumberOfMessagesOnQueue_ShouldReturnNumberOfMessagesOnQueue_WhenMessageExists()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(FifoQueueName);
+
+            await client.SendMessageAsync("Foo", FifoQueueName);
+
+            var actual = await client.GetNumberOfMessagesOnQueue(FifoQueueName);
+
+            Assert.Equal(FifoQueueName, actual.QueueName);
+            Assert.Equal(1, actual.ApproximateNumberOfMessages);
         }
     }
 }
