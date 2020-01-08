@@ -22,33 +22,6 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockCreateQueueAsync_ShouldReturnQueueUrl_WhenCreatingQueue()
-        {
-            var client = new SQSClientMock("mockEndpoint", "mockRegion");
-            var queueUrl = await client.CreateQueueAsync("test", false, false);
-
-            Assert.Equal("https://mockRegion/queue/test", queueUrl);
-        }
-
-        [Fact]
-        public async Task MockCreateStandardQueueAsync_ShouldReturnQueueUrl_WhenCreatingStandardQueue()
-        {
-            var client = new SQSClientMock("mockEndpoint", "mockRegion");
-            var queueUrl = await client.CreateStandardQueueAsync("test");
-
-            Assert.Equal("https://mockRegion/queue/test", queueUrl);
-        }
-
-        [Fact]
-        public async Task MockCreateStandardFifoQueueAsync_ShouldReturnQueueUrl_WhenCreatingFifoQueue()
-        {
-            var client = new SQSClientMock("mockEndpoint", "mockRegion");
-            var queueUrl = await client.CreateStandardFifoQueueAsync("test.fifo");
-
-            Assert.Equal("https://mockRegion/queue/test.fifo", queueUrl);
-        }
-
-        [Fact]
         public async Task MockCreateStandardFifoQueueAsync_ShouldThrowArgumentException_WhenQueueNameDoesNotEndWithFifo()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
@@ -116,7 +89,7 @@ namespace NetSQS.Mock.Tests
         private bool _messagePicked;
 
         [Fact]
-        public async Task MockStartMessageReceiver_ShouldRetrieveMessage_WhenQueueAndMessageExists()
+        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithSyncProcessor_WhenQueueAndMessageExists()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync(FifoQueueName);
@@ -126,12 +99,13 @@ namespace NetSQS.Mock.Tests
             var cancellationToken = cancellationTokenSource.Token;
 
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, message =>
-            {
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return true;
-            }, cancellationToken);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                message =>
+                {
+                    Assert.Equal("Hello World!", message);
+                    _messagePicked = true;
+                    return true;
+                }, cancellationToken);
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationTokenSource.Cancel();
@@ -149,60 +123,13 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, async (message) =>
-            {
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return await Task.FromResult(true);
-            }, cancellationToken);
-
-            await client.AwaitMessageProcessedAttempt(FifoQueueName);
-            cancellationTokenSource.Cancel();
-            Assert.True(_messagePicked);
-            _messagePicked = false;
-        }
-
-        [Fact]
-        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithRetry_WhenQueueAndMessageExists()
-        {
-            var client = new SQSClientMock("mockEndpoint", "mockRegion");
-            await client.CreateStandardFifoQueueAsync(FifoQueueName);
-            await client.SendMessageAsync("Hello World!", FifoQueueName);
-
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            client.StartMessageReceiver(FifoQueueName, 1, 1, 10, 1, 10, message =>
-            {
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return true;
-            }, cancellationToken);
-
-
-            await client.AwaitMessageProcessedAttempt(FifoQueueName);
-            cancellationTokenSource.Cancel();
-            Assert.True(_messagePicked);
-            _messagePicked = false;
-        }
-
-        [Fact]
-        public async Task MockStartMessageReceiver_ShouldRetrieveMessageWithAsyncMessageProcessor_WhenQueueAndMessageExists()
-        {
-            var client = new SQSClientMock("mockEndpoint", "mockRegion");
-            await client.CreateStandardFifoQueueAsync(FifoQueueName);
-
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            client.StartMessageReceiver(FifoQueueName, 1, 1, 10, 1, 10, async message =>
-            {
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return await Task.FromResult(true);
-            }, cancellationToken);
-
-            await client.SendMessageAsync("Hello World!", FifoQueueName);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                async (message) =>
+                {
+                    Assert.Equal("Hello World!", message);
+                    _messagePicked = true;
+                    return await Task.FromResult(true);
+                }, cancellationToken);
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationTokenSource.Cancel();
@@ -219,7 +146,8 @@ namespace NetSQS.Mock.Tests
             var cancellationToken = cancellationTokenSource.Token;
 
             Assert.ThrowsAsync<QueueDoesNotExistException>(() =>
-                client.StartMessageReceiver(FifoQueueName, 1, 1, 3, 1, 1, message => true, cancellationToken));
+                client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                    message => true, cancellationToken));
         }
 
         [Fact]
@@ -252,7 +180,7 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockQueue_ShouldNotPickMessageFromQueue_UntilAcked()
+        public async Task MockQueue_ShouldNotRemoveMessageFromQueue_UntilAcked()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync(FifoQueueName);
@@ -261,14 +189,15 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, async (message) =>
-            {
-                Assert.Single(client.GetMessages(FifoQueueName));
-                Assert.True(client.GetMessages(FifoQueueName).First().IsLocked);
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return await Task.FromResult(true);
-            }, cancellationToken);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                async (message) =>
+                {
+                    Assert.Single(client.GetMessages(FifoQueueName));
+                    Assert.True(client.GetMessages(FifoQueueName).First().IsLocked);
+                    Assert.Equal("Hello World!", message);
+                    _messagePicked = true;
+                    return await Task.FromResult(true);
+                }, cancellationToken);
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
             cancellationTokenSource.Cancel();
@@ -278,7 +207,7 @@ namespace NetSQS.Mock.Tests
         }
 
         [Fact]
-        public async Task MockQueue_ShouldNotPickMessageFromQueue_IfFalseIsReturned()
+        public async Task MockQueue_ShouldNotRemoveMessageFromQueue_IfFalseIsReturned()
         {
             var client = new SQSClientMock("mockEndpoint", "mockRegion");
             await client.CreateStandardFifoQueueAsync(FifoQueueName);
@@ -287,14 +216,15 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, async (message) =>
-            {
-                Assert.Single(client.GetMessages(FifoQueueName));
-                Assert.True(client.GetMessages(FifoQueueName).First().IsLocked);
-                Assert.Equal("Hello World!", message);
-                _messagePicked = true;
-                return await Task.FromResult(false);
-            }, cancellationToken);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                async (message) =>
+                {
+                    Assert.Single(client.GetMessages(FifoQueueName));
+                    Assert.True(client.GetMessages(FifoQueueName).First().IsLocked);
+                    Assert.Equal("Hello World!", message);
+                    _messagePicked = true;
+                    return await Task.FromResult(false);
+                }, cancellationToken);
 
             await client.AwaitMessageProcessedAttempt(FifoQueueName);
 
@@ -314,7 +244,7 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1,
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
                 async (message) =>
                 {
                     await Task.Delay(1000);
@@ -340,7 +270,7 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1,
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
                 async (message) =>
                 {
                     await Task.Delay(1000);
@@ -366,12 +296,13 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
-            {
-                Assert.Equal("Bar", message.Body);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                async (ISQSMessage message) =>
+                {
+                    Assert.Equal("Bar", message.Body);
 
-                await message.Ack();
-            }, cancellationToken);
+                    await message.Ack();
+                }, cancellationToken);
 
             await client.SendMessageAsync("Bar", FifoQueueName);
 
@@ -390,10 +321,8 @@ namespace NetSQS.Mock.Tests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
 
-            client.StartMessageReceiver(FifoQueueName, 1, 1, async (ISQSMessage message) =>
-            {
-                Assert.Equal("Bar", message.Body);
-            }, cancellationToken);
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                async (ISQSMessage message) => { Assert.Equal("Bar", message.Body); }, cancellationToken);
 
             await client.SendMessageAsync("Bar", FifoQueueName);
 
