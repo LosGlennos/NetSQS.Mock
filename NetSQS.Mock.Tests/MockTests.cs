@@ -86,6 +86,33 @@ namespace NetSQS.Mock.Tests
             await Assert.ThrowsAsync<QueueDoesNotExistException>(() => client.SendMessageAsync("test", "test"));
         }
 
+        [Fact]
+        public async Task AwaitMessageProcessedAttempt_ShouldAwaitMessageProcessingBeforeReturning()
+        {
+            var client = new SQSClientMock("mockEndpoint", "mockRegion");
+            await client.CreateStandardFifoQueueAsync(FifoQueueName);
+
+            var batch = new List<BatchMessageRequest>
+            {
+                new BatchMessageRequest("Hello World!")
+            }.ToArray();
+
+            var response = await client.SendMessageBatchAsync(batch, FifoQueueName);
+            var receivedTask = client.AwaitMessageProcessedAttempt(FifoQueueName);
+
+            client.StartMessageReceiver(FifoQueueName, new MessageReceiverOptions(),
+                message =>
+                {
+                    Assert.Equal("Hello World!", message);
+                    return true;
+                }, new CancellationToken());
+
+            await receivedTask;
+
+            var messages = client.GetMessages(FifoQueueName);
+            Assert.Empty(messages);
+        }
+
         private bool _messagePicked;
 
         [Fact]

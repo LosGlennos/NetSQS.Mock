@@ -69,6 +69,7 @@ namespace NetSQS.Mock
             }
 
             response.Success = response.SendResults.All(x => x.Success);
+            MockClientObject.QueueMessageProcessed[queueName] = false;
 
             return response;
         }
@@ -212,7 +213,7 @@ namespace NetSQS.Mock
         public async Task AwaitMessageProcessedAttempt(string queueName)
         {
             if (!MockClientObject.QueueMessageProcessed.ContainsKey(queueName))
-                throw new QueueDoesNotExistException($"Queue {queueName} does not exist");
+                throw new Exception($"No messages have been sent to queue: {queueName} - please ensure that you have placed a message on the queue before calling this method.");
 
             while (!MockClientObject.QueueMessageProcessed[queueName])
             {
